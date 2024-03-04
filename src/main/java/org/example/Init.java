@@ -36,7 +36,6 @@ public class Init {
         conferSpider("https://aclanthology.org/volumes/2022.conll-1/", "CoNLL");
         conferSpider("https://aclanthology.org/events/eacl-2014/", "EACL");
         conferSpider("https://aclanthology.org/events/emnlp-2009/", "EMNLP");
-
         // 文件路径
         String filePath = "papers/papers.json";
         // 创建Gson对象
@@ -49,13 +48,13 @@ public class Init {
             e.printStackTrace();
         }
     }
-    public static void conferSpider(String confURL,String conf) throws IOException {
+
+    public static void conferSpider(String confURL, String conf) throws IOException {
         Document doc = Jsoup.connect(confURL).get();
         Elements pdfs = doc.select("p.d-sm-flex").select("a[href$=.pdf]");
         Elements titles = doc.select("span.d-block").select("strong");
         int num = Math.min(Math.min(pdfs.size(), titles.size()), 40);
         for (int i = 0; i < num; i++) {
-
             String pdfUrl = pdfs.get(i).attr("href");
             if (!pdfUrl.endsWith(".pdf")) {
                 continue;
@@ -66,8 +65,9 @@ public class Init {
             Elements authors = paperDoc.select("p.lead").select("a");
             StringBuilder authorText = new StringBuilder();
             for (Element author : authors) {
-                authorText.append(author.text()).append(", "); // 将每个作者的文本内容添加到 authorText 中，并在末尾加上空格
+                authorText.append(author.text()).append(", "); // 将每个作者的姓名添加到 authorText 中，并在末尾加上空格
             }
+            //获取论文相关信息
             Elements keys = paperDoc.select("div.acl-paper-details").select("dt");
             Elements values = paperDoc.select("div.acl-paper-details").select("dd");
             HashMap<String, String> info = new HashMap<>();
@@ -80,7 +80,6 @@ public class Init {
                     info.put(key, value);
                 }
             } else continue;
-
             String year = info.get("Year");
             Elements abstarct = paperDoc.select("div.acl-abstract");
             String abstractText = "";
@@ -94,9 +93,11 @@ public class Init {
             System.out.println("Downloading: " + title);
             PDFDownloader.downloadFile(pdfUrl, path);
             File file = new File(path);
+            //从下载的PDF文件中提取文本
             PDDocument document = PDDocument.load(file);
             PDFTextStripper pdfStripper = new PDFTextStripper();
             String text = pdfStripper.getText(document);
+            //从下载的PDF文件中提取图片
             int imageNum = 0;
             Path folder = Paths.get("papers/images/" + fileName.replaceAll(".pdf$", ""));
             if (!Files.exists(folder)) {
@@ -108,7 +109,6 @@ public class Init {
                 for (PDPage page : document.getPages()) {
                     PDResources resources = page.getResources();
                     Iterable<COSName> objectNames = resources.getXObjectNames();
-
                     if (objectNames != null) {
                         for (COSName cosName : objectNames) {
                             PDXObject xObject = resources.getXObject(cosName);
@@ -119,16 +119,15 @@ public class Init {
                             }
                         }
                     }
-
                 }
             }
-                document.close();
-                Paper paper = new Paper(title, authorText.toString(), abstractText, Integer.parseInt(year), conf, info, path, text);
-                papers.add(paper);
-                indexer.indexPaper(paper);
-                System.out.println("Paper indexed successfully!");
-            }
-            System.out.println(papers.size());
+            document.close();
+            Paper paper = new Paper(title, authorText.toString(), abstractText, Integer.parseInt(year), conf, info, path, text);
+            papers.add(paper);
+            indexer.indexPaper(paper);
+            System.out.println("Paper indexed successfully!");
         }
+        System.out.println(papers.size());
+    }
 
 }

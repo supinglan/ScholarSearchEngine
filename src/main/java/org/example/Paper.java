@@ -10,11 +10,10 @@ public class Paper {
     private int year;
     private String conference;
     private Map<String, String> info;
-
     private String path;
     private String text;
 
-    public Paper(String title, String author, String abstractText, int year, String conference, Map<String, String> info, String path,String text) {
+    public Paper(String title, String author, String abstractText, int year, String conference, Map<String, String> info, String path, String text) {
         this.title = title;
         this.author = author;
         this.abstractText = abstractText;
@@ -24,8 +23,6 @@ public class Paper {
         this.path = path;
         this.text = text;
     }
-
-    // Getter and Setter methods for the attributes
 
     public String getTitle() {
         return title;
@@ -75,7 +72,6 @@ public class Paper {
         this.info = info;
     }
 
-    // Additional methods to modify info map
 
     public void addInfo(String key, String value) {
         if (info == null) {
@@ -89,6 +85,7 @@ public class Paper {
             info.remove(key);
         }
     }
+
     public String getPath() {
         return path;
     }
@@ -96,11 +93,12 @@ public class Paper {
     public void setPath(String path) {
         this.path = path;
     }
+
     public String getText() {
         return text;
     }
 
     public void setText(String text) {
-        this.text= text;
+        this.text = text;
     }
 }

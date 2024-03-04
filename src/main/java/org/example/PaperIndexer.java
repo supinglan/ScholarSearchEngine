@@ -30,6 +30,7 @@ public class PaperIndexer {
     public PaperIndexer(String indexPath) {
         this.indexPath = indexPath;
     }
+
     public void initializeIndex() throws IOException {
         // 索引配置
         Directory indexDirectory = FSDirectory.open(Paths.get(indexPath));
@@ -60,6 +61,8 @@ public class PaperIndexer {
         addField(doc, "abstractText", paper.getAbstractText());
         addField(doc, "year", Integer.toString(paper.getYear()));
         addField(doc, "conference", paper.getConference());
+        addField(doc, "path", paper.getPath());
+        addField(doc, "text", paper.getText());
 
         // 添加额外的字段
         if (paper.getInfo() != null) {
@@ -67,10 +70,6 @@ public class PaperIndexer {
                 addField(doc, entry.getKey(), entry.getValue());
             }
         }
-
-        // 添加路径和文本字段
-        addField(doc, "path", paper.getPath());
-        addField(doc, "text", paper.getText());
 
         // 将文档添加到索引中
         indexWriter.addDocument(doc);
@@ -90,52 +89,48 @@ public class PaperIndexer {
         IndexSearcher searcher = new IndexSearcher(reader);
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
-        String[] fields = {"title", "text"}; // 替换为实际的字段名
+        String[] fields = {"title","abstarctText","text"};
 
         Map<String, Float> boosts = new HashMap<>();
         boosts.put("title", 5.0f);
         boosts.put("abstractText", 3.0f);
         boosts.put("text", 1.0f);
 
-        boolean continueSearch;
+        boolean continueOprations;
         while (true) {
-            continueSearch = true;
+            continueOprations = true;
             System.out.println("请输入查询内容:");
             String content = scanner.nextLine();
             TopDocs topDocs = null;
             switch (choice) {
                 case 1:
                 case 5:
-                    // 构建多字段查询对象并设置权重
+                    //按内容查询
+                    //构建多字段查询对象并设置权重
                     MultiFieldQueryParser parser = new MultiFieldQueryParser(fields, analyzer, boosts);
-                    // 构建多字段的模糊查询对象
-                    parser.setFuzzyMinSim(2); // 设置模糊搜索的最小相似度
+                    //构建多字段的模糊查询对象
+                    parser.setFuzzyMinSim(2); //设置模糊搜索的最小相似度
                     Query query = parser.parse(content + "~"); // 添加模糊搜索的波浪符号
-                    // 执行查询
                     topDocs = searcher.search(query, 10);
-
                     break;
                 case 2:
+                    //按年份查询
                     QueryParser parserByYear = new QueryParser("year", analyzer);
                     Query queryByYear = parserByYear.parse(String.valueOf(content));
-                    // 执行查询
                     topDocs = searcher.search(queryByYear, Integer.MAX_VALUE);
                     break;
                 case 3:
+                    //按会议名查询
                     QueryParser parserByConference = new QueryParser("conference", analyzer);
                     Query queryByConference = parserByConference.parse(content + "~");
-                    // 执行查询
                     topDocs = searcher.search(queryByConference, 10);
-
                     break;
                 case 4:
+                    //按作者查询
                     QueryParser parserByAuthor = new QueryParser("author", analyzer);
                     Query queryByAuthor = parserByAuthor.parse(content + "~");
-                    // 执行查询
                     topDocs = searcher.search(queryByAuthor, 10);
-
                     break;
-
                 default:
                     System.out.println("系统错误！");
                     break;
@@ -168,16 +163,18 @@ public class PaperIndexer {
                     File folder = new File(folderPath);
                     File[] files = folder.listFiles();
                     for (File file : files) {
-                        System.out.println(folderPath+"/"+file.getName());
+                        System.out.println(folderPath + "/" + file.getName());
                         i++;
+                        if (i > 20) break;
                     }
+                    if (i > 20) break;
                 }
                 if (i == 1) {
                     System.out.println("没有符合要求的图片！");
                 }
             }
             if (choice == 5) {
-                while (continueSearch) {
+                while (continueOprations) {
                     System.out.print("\n请选择操作: ");
                     System.out.print("1.继续查询 ");
                     System.out.println("2.返回主菜单 ");
@@ -186,13 +183,13 @@ public class PaperIndexer {
                         option = scanner.nextInt();
                         // 处理读取到的整数
                     } catch (InputMismatchException e) {
-                        // 清除输入缓冲区，跳过错误的输入，以免陷入无限循环
+                        // 清除输入缓冲区，跳过错误的输入
                         scanner.next();
                     }
                     scanner.nextLine(); // 消耗换行符
                     switch (option) {
                         case 1:
-                            continueSearch = false;
+                            continueOprations = false;
                             break;
                         case 2:
                             // 返回主菜单
@@ -203,24 +200,20 @@ public class PaperIndexer {
                             break;
                     }
                 }
-            }
-            else {
-                while (continueSearch) {
+            } else {
+                while (continueOprations) {
                     System.out.print("\n请选择操作: ");
                     System.out.print("1.查看详细内容 ");
                     System.out.print("2.继续查询 ");
                     System.out.println("3.返回主菜单");
-
                     int option = 0;
                     try {
                         option = scanner.nextInt();
-                        // 处理读取到的整数
                     } catch (InputMismatchException e) {
-                        // 清除输入缓冲区，跳过错误的输入，以免陷入无限循环
+                        // 清除输入缓冲区，跳过错误的输入
                         scanner.next();
                     }
                     scanner.nextLine(); // 消耗换行符
-
                     switch (option) {
                         case 1:
                             // 执行查看详细内容的操作
@@ -228,9 +221,8 @@ public class PaperIndexer {
                             int id = 0;
                             try {
                                 id = scanner.nextInt();
-                                // 处理读取到的整数
                             } catch (InputMismatchException e) {
-                                // 清除输入缓冲区，跳过错误的输入，以免陷入无限循环
+                                // 清除输入缓冲区，跳过错误的输入
                                 scanner.next();
                             }
                             scanner.nextLine();
@@ -238,11 +230,10 @@ public class PaperIndexer {
                                 System.out.println("请输入有效id！");
                                 break;
                             }
-
                             Document doc = searcher.doc(topDocs.scoreDocs[id - 1].doc);
                             List<IndexableField> docFields = doc.getFields();
                             for (IndexableField field : docFields) {
-                                String fieldName = field.name(); // 获取字段名
+                                String fieldName = field.name(); 
                                 String fieldValue = field.stringValue();
                                 if (fieldValue != null && (!fieldName.equals("text")) && (!fieldValue.isEmpty())) {
                                     // 设定列宽
@@ -252,8 +243,8 @@ public class PaperIndexer {
                             }
                             break;
                         case 2:
-                            continueSearch = false;
                             // 继续查询
+                            continueOprations = false;
                             break;
                         case 3:
                             // 返回主菜单
@@ -267,9 +258,9 @@ public class PaperIndexer {
             }
         }
     }
+
     public static void printWithLineBreaks(String input, int columnWidth) {
         for (int i = 0; i < input.length(); i += columnWidth) {
-            // 确保不超出字符串长度
             int endIndex = Math.min(i + columnWidth, input.length());
             System.out.println(input.substring(i, endIndex));
         }
